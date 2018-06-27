@@ -4,6 +4,9 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.PorterDuffXfermode;
 
 /**
  * 路径
@@ -52,10 +55,10 @@ public class MyPath extends Action {
         canvas.drawPath(path, paint);
     }
 
+
+
     @Override
     public void onUP(Canvas canvas) {
-
-
 
     }
 

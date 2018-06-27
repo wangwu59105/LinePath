@@ -88,11 +88,12 @@ public class SpotFilter {
     	addNoCopy(new Spot(c, time));
     }
     
-    public void add(Spot c) {
-    	addNoCopy(new Spot(c));
+    public Spot add(Spot c) {
+    	return addNoCopy(new Spot(c));
     }
     
-    protected void addNoCopy(Spot c) {
+    protected Spot addNoCopy(Spot c) {
+
         if (mSpots.size() == mBufSize) {
             mSpots.removeLast();
         }
@@ -101,6 +102,7 @@ public class SpotFilter {
 
         tmpSpot = filteredOutput(tmpSpot);
         mPlotter.plot(tmpSpot,canvas);
+        return c;
     }
 
     public void add(MotionEvent.PointerCoords[] cv, long time) {

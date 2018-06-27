@@ -19,7 +19,7 @@ import java.util.LinkedList;
 
 /**
  * Created by wangwu on 2018/6/26.
- * 主Canvas画点改成画图。如果画主Canvas画点的当笔画过多，如过要重新绘制、或者返回再重绘，将所有的点遍历耗时onPenDraw
+ * 主Canvas画点
  */
 public class MySpotPath extends MyPath implements SpotFilter.Plotter {
 

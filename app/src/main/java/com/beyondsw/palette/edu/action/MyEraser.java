@@ -28,6 +28,7 @@ public class MyEraser extends Action {
         return true;
     }
 
+    @Override
     public void onDraw(Canvas canvas) {
 
 
@@ -67,6 +68,7 @@ public class MyEraser extends Action {
         canvas.drawPath(path, mPaint);
     }
 
+    @Override
     public void onMove(float mx, float my) {
         path.lineTo(mx, my);
     }

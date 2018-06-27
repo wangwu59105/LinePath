@@ -16,6 +16,7 @@ public class MyCircle extends Action {
         this.radius = radius;
     }
 
+    @Override
     public void onDraw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
@@ -26,6 +27,7 @@ public class MyCircle extends Action {
                 paint);
     }
 
+    @Override
     public void onMove(float mx, float my) {
         stopX = mx;
         stopY = my;

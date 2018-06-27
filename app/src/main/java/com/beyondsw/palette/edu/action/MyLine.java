@@ -13,6 +13,7 @@ public class MyLine extends Action {
         super(x, y, color, size);
     }
 
+    @Override
     public void onDraw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
@@ -22,6 +23,7 @@ public class MyLine extends Action {
         canvas.drawLine(startX, startY, stopX, stopY, paint);
     }
 
+    @Override
     public void onMove(float mx, float my) {
         stopX = mx;
         stopY = my;

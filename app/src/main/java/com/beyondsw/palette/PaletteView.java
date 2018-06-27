@@ -1,9 +1,11 @@
 package com.beyondsw.palette;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -14,7 +16,9 @@ import com.beyondsw.palette.edu.DoodleChannel;
 import com.beyondsw.palette.edu.Transaction;
 import com.beyondsw.palette.edu.action.Action;
 import com.beyondsw.palette.edu.action.MyPath;
+import com.beyondsw.palette.edu.marker.MySpotPath;
 import com.beyondsw.palette.edu.marker.PressureCooker;
+import com.beyondsw.palette.edu.marker.Spot;
 import com.beyondsw.palette.manager.UserInfo;
 
 import java.util.ArrayList;
@@ -139,12 +143,20 @@ public class PaletteView extends View {
         }
 
         if (channel.actions != null && channel.actions.size() > 0) {
-            channel.actions.remove(channel.actions.size() - 1);
+            Action action = channel.actions.remove(channel.actions.size() - 1);
             saveUserData(account, null, true, false, false);
             if (mBufferCanvas == null) {
                 return false;
             }
-            drawHistoryActions(mBufferCanvas);
+            //todo  test
+//            if(action instanceof MySpotPath){
+//                MySpotPath spotPath = (MySpotPath) action;
+//                spotPath.setPenColor(0);
+//                spotPath.onPenDraw(mBufferCanvas);
+//                //spotPath.onDraw(mBufferCanvas);
+//                invalidate();
+//            }
+            drawHistoryActions(mBufferCanvas,false);
 
 
             if (mCallback != null) {
@@ -156,7 +168,13 @@ public class PaletteView extends View {
     }
 
 
-    private void drawHistoryActions(Canvas canvas) {
+    /**
+     *
+     * @param canvas
+     * @param onlyLine true 仅仅画线   or  线和毛笔迹点都画
+     *                 这种组合下下测测   组合显示。更好的是用线代替毛笔点  todo  ww_  下个版本研究
+     */
+    private void drawHistoryActions(Canvas canvas,boolean onlyLine) {
         if (canvas == null) {
             return;
         }
@@ -169,10 +187,16 @@ public class PaletteView extends View {
 
             for (Action a : paintChannel.actions) {
                 a.onDraw(canvas);
+                if(!onlyLine){
+                    a.onPenDraw(canvas);
+                }
             }
             // 绘制当前
             if (paintChannel.action != null) {
                 paintChannel.action.onDraw(canvas);
+                if(!onlyLine){
+                    paintChannel.action.onPenDraw(canvas);
+                }
             }
             invalidate();
         }
@@ -211,7 +235,7 @@ public class PaletteView extends View {
         if (mBufferCanvas == null) {
             return;
         }
-        drawHistoryActions(mBufferCanvas);
+        drawHistoryActions(mBufferCanvas,false);
         if (mCallback != null) {
             mCallback.onUndoRedoStatusChanged();
         }
@@ -238,6 +262,8 @@ public class PaletteView extends View {
         }
     }
 
+    Spot mTmpSpot = new Spot();
+
     @SuppressWarnings("all")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -246,6 +272,7 @@ public class PaletteView extends View {
         }
         int eAction = event.getAction();
         if (eAction == MotionEvent.ACTION_CANCEL) {
+            finishPlot();
             return false;
         }
         final int action = eAction & MotionEvent.ACTION_MASK;
@@ -258,21 +285,30 @@ public class PaletteView extends View {
         int N = event.getHistorySize();
         long time = event.getEventTime();
 
-
-
-
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                int jd = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO)
+                        ? event.getActionIndex()
+                        : 0;
                 onPaintActionStart(touchX, touchY);
+                addPlot(event,jd);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mBufferBitmap == null) {
                     initBuffer();
                 }
+                addMovePlot(event);
                 onPaintActionMove(touchX, touchY);
+
                 break;
             case MotionEvent.ACTION_UP:
+                int ju = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO)
+                        ? event.getActionIndex()
+                        : 0;
+                addPlot(event,ju);
+                finishPlot();
                 onPaintActionEnd(touchX, touchY);
+
                 break;
             default:
                 break;
@@ -282,6 +318,56 @@ public class PaletteView extends View {
         return true;
     }
 
+    /**
+     * 保存毛笔的点
+     * @param event
+     */
+    private void addPlot(MotionEvent event,int j){
+        if (paintChannel == null||mBufferCanvas == null) {
+            return;
+        }
+
+        long time = event.getEventTime();
+        mTmpSpot.update(
+                event.getX(j),
+                event.getY(j),
+                event.getSize(j),
+                event.getPressure(j) + event.getSize(j),
+                time,
+                getToolTypeCompat(event, j)
+        );
+        paintChannel.action.add(mTmpSpot,mBufferCanvas);
+    }
+
+
+
+    private void addMovePlot(MotionEvent event){
+        if (paintChannel == null||mBufferCanvas == null) {
+            return;
+        }
+        int N = event.getHistorySize();
+        for (int i = 0; i < N; i++) {
+            mTmpSpot.update(
+                    event.getHistoricalX(0, i),
+                    event.getHistoricalY(0, i),
+                    event.getHistoricalSize(0, i),
+                    event.getHistoricalPressure(0, i)
+                            + event.getHistoricalSize(0, i),
+                    event.getHistoricalEventTime(i),
+                    getToolTypeCompat(event, 0)
+            );
+            paintChannel.action.add(mTmpSpot,mBufferCanvas);
+        }
+        addPlot(event,0);
+    }
+
+
+    private void finishPlot(){
+        if (paintChannel == null) {
+            return;
+        }
+        paintChannel.action.finish();
+    }
 
     //ww
 
@@ -329,7 +415,8 @@ public class PaletteView extends View {
         }
         mLastX = x;
         mLastY = y;
-        channel.action = new MyPath(x, y, channel.paintColor, channel.paintSize);
+        //channel.action = new MyPath(x, y, channel.paintColor, channel.paintSize);
+        channel.action = new MySpotPath(x, y, channel.paintColor, channel.paintSize,mPressureCooker,mBufferBitmap.getConfig());
         channel.action.onDraw(mBufferCanvas);
     }
 
@@ -492,6 +579,29 @@ public class PaletteView extends View {
     }
 
 
+
+
+    final static boolean hasToolType() {
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH);
+    }
+    @SuppressLint("NewApi")
+    final static int getToolTypeCompat(MotionEvent me, int index) {
+        if (hasToolType()) {
+            return me.getToolType(index);
+        }
+
+        // dirty hack for the HTC Flyer
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
+            if ("flyer".equals(Build.HARDWARE)) {
+                if (me.getSize(index) <= 0.1f) {
+                    // with very high probability this is the stylus
+                    return MotionEvent.TOOL_TYPE_STYLUS;
+                }
+            }
+        }
+
+        return MotionEvent.TOOL_TYPE_FINGER;
+    }
     /**
      * 设置当前画笔为橡皮擦
      *

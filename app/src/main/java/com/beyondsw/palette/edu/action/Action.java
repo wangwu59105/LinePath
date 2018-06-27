@@ -3,6 +3,8 @@ package com.beyondsw.palette.edu.action;
 import android.graphics.Canvas;
 import android.graphics.Color;
 
+import com.beyondsw.palette.edu.marker.Spot;
+
 /**
  * 形状基类，所有涂鸦板上的绘制的形状继承该基类
  */
@@ -59,6 +61,23 @@ public abstract class Action {
 
 
     public void onUP(Canvas canvas){
+
+    }
+
+
+    /***
+     * 紧紧提供个笔锋使用
+     */
+
+    public void add(Spot s ,Canvas canvas) {
+
+    }
+    //ontouch 毛笔
+    public void finish() {
+
+    }
+    //ontouch 毛笔 重新绘制
+    public void onPenDraw(Canvas canvas) {
 
     }
 }
